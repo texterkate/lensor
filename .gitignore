@@ -238,4 +238,4 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # Directory
-saved_models/*
+#saved_models/*
