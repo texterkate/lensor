@@ -26,7 +26,7 @@ from model_utils import (
 if __name__ == '__main__':
     print("Torch version:", torch.__version__)
 
-    TRAIN = False
+    TRAIN = True
 
     # download_helper_functions()
 
@@ -113,28 +113,26 @@ if __name__ == '__main__':
         targets = []
 
         for i, item in enumerate(test_dataset):
-            if i == 25:
-                break
             print(f"Image {i+1} of {len(test_dataset)}")
             img, target = item
-            model.eval()
-            with torch.no_grad():
-                pred = model([img.to(device)])[0]
-                preds.append(pred)
-                targets.append(target)
+            if torch.any(target['labels'] != 1):
+                model.eval()
+                with torch.no_grad():
+                    pred = model([img.to(device)])[0]
+                    preds.append(pred)
+                    targets.append(target)
+                    plot_img_bbox_target(torch_to_pil(img), target)
+                    plot_img_bbox_pred(torch_to_pil(img), pred, iou_thresh=0.5)
+                    print("test")
 
-
-        # plot_img_bbox_target(torch_to_pil(img), target)
-        # plot_img_bbox_pred(torch_to_pil(img), pred, iou_thresh=0.5)
-
-        # calculate eval scores per class
-        metric = MeanAveragePrecision()
-        metric.update([preds], [targets])
-        print(metric.compute())
-
-        metric_per_class = MeanAveragePrecision(class_metrics=True)
-        metric_per_class.update([preds], [targets])
-        print(metric_per_class.compute())
+        # # calculate eval scores per class
+        # metric = MeanAveragePrecision()
+        # metric.update([preds], [targets])
+        # print(metric.compute())
+        #
+        # metric_per_class = MeanAveragePrecision(class_metrics=True)
+        # metric_per_class.update([preds], [targets])
+        # print(metric_per_class.compute())
 
         # pred_labels = [f"{label}: {score:.3f}" for label, score in zip(pred["labels"], pred["scores"])]
         # pred_boxes = pred["boxes"].long()

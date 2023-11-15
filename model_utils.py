@@ -104,24 +104,25 @@ class myOwnDataset(torch.utils.data.Dataset):
         # In coco format, bbox = [xmin, ymin, width, height]
         # In pytorch, the input should be [xmin, ymin, xmax, ymax]
         boxes = []
+        labels = []
+        is_crowd = []
         for i in range(num_objs):
             xmin = coco_annotation[i]["bbox"][0]
             ymin = coco_annotation[i]["bbox"][1]
             xmax = xmin + coco_annotation[i]["bbox"][2]
             ymax = ymin + coco_annotation[i]["bbox"][3]
             boxes.append([xmin, ymin, xmax, ymax])
+            labels.append(coco_annotation[i]["category_id"])
+            is_crowd.append(coco_annotation[i]["iscrowd"])
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        # Labels
-        labels = torch.ones((num_objs,), dtype=torch.int64)
-        # Tensorise img_id
-        # img_id = torch.tensor([img_id])
+        labels = torch.as_tensor(labels, dtype=torch.int64)
+        iscrowd = torch.as_tensor(is_crowd, dtype=torch.int64)
+
         # Size of bbox (Rectangular)
         areas = []
         for i in range(num_objs):
             areas.append(coco_annotation[i]["area"])
         areas = torch.as_tensor(areas, dtype=torch.float32)
-        # Iscrowd
-        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
 
         # Annotation is in dictionary format
         my_annotation = {"boxes": boxes, "labels": labels, "image_id": img_id, "area": areas, "iscrowd": iscrowd}
