@@ -1,5 +1,7 @@
 import time
 import os
+import random
+
 import torch
 import matplotlib.pyplot as plt
 import torchvision
@@ -26,7 +28,7 @@ from model_utils import (
 if __name__ == '__main__':
     print("Torch version:", torch.__version__)
 
-    TRAIN = True
+    TRAIN = False
 
     # download_helper_functions()
 
@@ -101,9 +103,9 @@ if __name__ == '__main__':
         # load model
         model = get_model_object_detection(config.num_classes)
         if device == torch.device("cpu"):
-            model.load_state_dict(torch.load("best_model/model_epoch_2.pth", map_location=torch.device('cpu')))
+            model.load_state_dict(torch.load("best_model/model_epoch_8.pth", map_location=torch.device('cpu')))
         else:
-            model.load_state_dict(torch.load("best_model/model_epoch_2.pth"))
+            model.load_state_dict(torch.load("best_model/model_epoch_8.pth"))
         model.to(device)
         # evaluate(model, test_dataloader, device=device)
 
@@ -112,18 +114,37 @@ if __name__ == '__main__':
         preds = []
         targets = []
 
-        for i, item in enumerate(test_dataset):
-            print(f"Image {i+1} of {len(test_dataset)}")
-            img, target = item
-            if torch.any(target['labels'] != 1):
-                model.eval()
-                with torch.no_grad():
-                    pred = model([img.to(device)])[0]
-                    preds.append(pred)
-                    targets.append(target)
-                    plot_img_bbox_target(torch_to_pil(img), target)
-                    plot_img_bbox_pred(torch_to_pil(img), pred, iou_thresh=0.5)
-                    print("test")
+        # take random sample of 10 images
+        random.seed(42)
+        random_ints = random.sample(range(len(test_dataset)), 10)
+
+        # make directory for inference results if it does not exist
+        os.makedirs("inference_results", exist_ok=True)
+
+        # plot images with target and predictions and save them
+        for i in random_ints:
+            img, target = test_dataset[i]
+            model.eval()
+            with torch.no_grad():
+                pred = model([img.to(device)])[0]
+                plot_img_bbox_target(torch_to_pil(img), target, f"inference_results/image_{target['image_id']}_target.png")
+                plot_img_bbox_pred(torch_to_pil(img), pred, f"inference_results/image_{target['image_id']}_pred.png", iou_thresh=0.5)
+                print("test")
+
+
+        # for i, item in enumerate(test_dataset):
+        #     print(f"Image {i+1} of {len(test_dataset)}")
+        #     img, target = item
+        #     if torch.any(target['labels'] != 1):
+        #         model.eval()
+        #         with torch.no_grad():
+        #             pred = model([img.to(device)])[0]
+        #             preds.append(pred)
+        #             targets.append(target)
+        #             plot_img_bbox_target(torch_to_pil(img), target)
+        #             plot_img_bbox_pred(torch_to_pil(img), pred, iou_thresh=0.5)
+        #             plot_img_bbox_pred(torch_to_pil(img), pred, iou_thresh=0.2)
+        #             print("test")
 
         # # calculate eval scores per class
         # metric = MeanAveragePrecision()

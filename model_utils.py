@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import torchvision
 from matplotlib import patches
 import torchvision.transforms as T
+from collections import Counter
 
 id2label = {
     0: 'severity-damage',
@@ -27,6 +28,7 @@ id2label = {
 def filter_images_with_annotations(coco_json_path):
     # Get filename incl extension
     filename = os.path.basename(coco_json_path)
+    print("Reading file:", filename)
 
     # Read the COCO JSON file
     with open(coco_json_path, 'r') as coco_file:
@@ -47,6 +49,11 @@ def filter_images_with_annotations(coco_json_path):
 
     # Create output path which is stored in directory 'filtered'
     output_json_path = os.path.join(output_dir, filename)
+
+    # print count values of categories
+    category_ids = [annotation["category_id"] for annotation in coco_data["annotations"]]
+    print("Count label categories:", Counter(category_ids))
+
 
     # Write the new JSON data to a new file
     with open(output_json_path, 'w') as output_file:
@@ -159,7 +166,7 @@ def get_model_object_detection(num_classes):
     return model
 
 
-def plot_img_bbox_target(img, target):
+def plot_img_bbox_target(img, target, filepath):
     # plot the image and bboxes
     # Bounding boxes are defined as follows: x-min y-min width height
     fig, a = plt.subplots(1, 1)
@@ -181,8 +188,11 @@ def plot_img_bbox_target(img, target):
 
     plt.show()
 
+    # save image
+    fig.savefig(filepath)
 
-def plot_img_bbox_pred(img, target, iou_thresh=0.5):
+
+def plot_img_bbox_pred(img, target, filepath, iou_thresh=0.5):
     # plot the image and bboxes
     # Bounding boxes are defined as follows: x-min y-min width height
     fig, a = plt.subplots(1, 1)
@@ -205,6 +215,9 @@ def plot_img_bbox_pred(img, target, iou_thresh=0.5):
             a.text(x, y, label_str, fontsize=8, color='r', verticalalignment='top')
 
     plt.show()
+
+    # save image
+    fig.savefig(filepath)
 
 
 # torch to PIL

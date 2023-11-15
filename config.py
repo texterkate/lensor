@@ -22,8 +22,8 @@ train_shuffle_dl = True
 num_workers_dl = 4
 
 # Params for training
-num_classes = 8
-num_epochs = 2
+num_classes = 9
+num_epochs = 15
 
 lr = 0.005
 momentum = 0.9
