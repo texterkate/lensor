@@ -1,48 +1,30 @@
-import os
 import torch
 import torch.utils.data
-import torchvision
 from PIL import Image
 from pycocotools.coco import COCO
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 import os
 import urllib.request
 import json
+import matplotlib.pyplot as plt
+import torchvision
+from matplotlib import patches
+import torchvision.transforms as T
 
-# # Path to the input JSON file
-# input_file_path = "data/annotations/instances_test.json"
-#
-# # Path to the output JSON file
-# output_file_path = "data/annotations/instances_test_small.json"
-#
-# # Load the JSON file
-# with open(input_file_path, 'r') as json_file:
-#     data = json.load(json_file)
-#
-# # Keep only 'info', 'licenses', and 'categories'
-# new_data = {
-#     'info': data.get('info', {}),
-#     'licenses': data.get('licenses', []),
-#     'categories': data.get('categories', [])
-# }
-#
-# # Keep only the first 20 items from 'images' and 'annotations'
-# new_data['images'] = data.get('images', [])[:5]
-# new_data['annotations'] = data.get('annotations', [])[:5]
-#
-# # Write the modified data to a new JSON file
-# with open(output_file_path, 'w') as new_json_file:
-#     json.dump(new_data, new_json_file, indent=2)
-#
-# print(f"Data from '{input_file_path}' has been processed and saved to '{output_file_path}'.")
+id2label = {
+    0: 'severity-damage',
+    1: 'minor-dent',
+    2: 'minor-scratch',
+    3: 'moderate-broken',
+    4: 'moderate-dent',
+    5: 'moderate-scratch',
+    6: 'severe-broken',
+    7: 'severe-dent',
+    8: 'severe-scratch'
+}
 
-
-
-import json
 
 def filter_images_with_annotations(coco_json_path):
-
     # Get filename incl extension
     filename = os.path.basename(coco_json_path)
 
@@ -142,12 +124,7 @@ class myOwnDataset(torch.utils.data.Dataset):
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
 
         # Annotation is in dictionary format
-        my_annotation = {}
-        my_annotation["boxes"] = boxes
-        my_annotation["labels"] = labels
-        my_annotation["image_id"] = img_id
-        my_annotation["area"] = areas
-        my_annotation["iscrowd"] = iscrowd
+        my_annotation = {"boxes": boxes, "labels": labels, "image_id": img_id, "area": areas, "iscrowd": iscrowd}
 
         if self.transforms is not None:
             img = self.transforms(img)
@@ -180,23 +157,55 @@ def get_model_object_detection(num_classes):
 
     return model
 
-# def get_model_instance_segmentation(num_classes):
-#     # load an instance segmentation model pre-trained on COCO
-#     model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT")
-#
-#     # get number of input features for the classifier
-#     in_features = model.roi_heads.box_predictor.cls_score.in_features
-#     # replace the pre-trained head with a new one
-#     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-#
-#     # now get the number of input features for the mask classifier
-#     in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-#     hidden_layer = 256
-#     # and replace the mask predictor with a new one
-#     model.roi_heads.mask_predictor = MaskRCNNPredictor(
-#         in_features_mask,
-#         hidden_layer,
-#         num_classes,
-#     )
-#
-#     return model
+
+def plot_img_bbox_target(img, target):
+    # plot the image and bboxes
+    # Bounding boxes are defined as follows: x-min y-min width height
+    fig, a = plt.subplots(1, 1)
+    fig.set_size_inches(5, 5)
+    a.imshow(img)
+    for box, label in zip(target['boxes'], target['labels']):
+        x, y, width, height = box[0], box[1], box[2] - box[0], box[3] - box[1]
+        rect = patches.Rectangle((x, y),
+                                 width, height,
+                                 linewidth=2,
+                                 edgecolor='r',
+                                 facecolor='none')
+        # Draw the bounding box on top of the image
+        a.add_patch(rect)
+
+        # Display label near the bounding box
+        label_str = f"{id2label[label.item()]}"
+        a.text(x, y, label_str, fontsize=8, color='r', verticalalignment='top')
+
+    plt.show()
+
+
+def plot_img_bbox_pred(img, target, iou_thresh=0.5):
+    # plot the image and bboxes
+    # Bounding boxes are defined as follows: x-min y-min width height
+    fig, a = plt.subplots(1, 1)
+    fig.set_size_inches(5, 5)
+    a.imshow(img)
+
+    for box, label, score in zip(target['boxes'], target['labels'], target['scores']):
+        if score >= iou_thresh:
+            x, y, width, height = box[0], box[1], box[2] - box[0], box[3] - box[1]
+            rect = patches.Rectangle((x, y),
+                                     width, height,
+                                     linewidth=2,
+                                     edgecolor='r',
+                                     facecolor='none')
+            # Draw the bounding box on top of the image
+            a.add_patch(rect)
+
+            # Display label and score near the bounding box
+            label_str = f"{id2label[label.item()]}: {score:.3f}"
+            a.text(x, y, label_str, fontsize=8, color='r', verticalalignment='top')
+
+    plt.show()
+
+
+# torch to PIL
+def torch_to_pil(img):
+    return T.ToPILImage()(img).convert("RGB")
