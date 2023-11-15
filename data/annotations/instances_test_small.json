@@ -1,0 +1,363 @@
+{
+  "info": {
+    "year": "2023",
+    "version": "4",
+    "description": "Exported from roboflow.com",
+    "contributor": "",
+    "url": "https://public.roboflow.com/object-detection/undefined",
+    "date_created": "2023-11-03T15:39:37+00:00"
+  },
+  "licenses": [
+    {
+      "id": 1,
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "CC BY 4.0"
+    }
+  ],
+  "categories": [
+    {
+      "id": 0,
+      "name": "severity-damage",
+      "supercategory": "none"
+    },
+    {
+      "id": 1,
+      "name": "minor-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 2,
+      "name": "minor-scratch",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 3,
+      "name": "moderate-broken",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 4,
+      "name": "moderate-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 5,
+      "name": "moderate-scratch",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 6,
+      "name": "severe-broken",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 7,
+      "name": "severe-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 8,
+      "name": "severe-scratch",
+      "supercategory": "severity-damage"
+    }
+  ],
+  "images": [
+    {
+      "id": 0,
+      "license": 1,
+      "file_name": "WhatsApp-Image-2023-08-10-at-10-59-49-AM_jpeg_jpg.rf.214dc65a04af3c7da6a0c285ff710557.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:37+00:00"
+    },
+    {
+      "id": 1,
+      "license": 1,
+      "file_name": "0884_JPEG_jpg.rf.44c5f8310a99b55d6f6f5534a73682a3.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:37+00:00"
+    },
+    {
+      "id": 2,
+      "license": 1,
+      "file_name": "9025514-mahindra-mahindra_xuv_300_w8_o-2020-minor_scratch-dents_jpeg.rf.275ad33228170110ca7ba8d21fafbe1b.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:37+00:00"
+    },
+    {
+      "id": 3,
+      "license": 1,
+      "file_name": "9610904-tata-tata_safari_storme_2012-2015_22_lx_4x2-2012-minor_scratch-dents_jpeg.rf.48bfc7f758a34de29c19b72ab71095db.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:37+00:00"
+    },
+    {
+      "id": 4,
+      "license": 1,
+      "file_name": "9885420-hyundai-hyundai_grand_i10_2013-2017_magna_12_kappa_vtvt-2014-minor_dent-dents_jpeg.rf.4dab27bfcaf9b07e61d41e7337ba19bf.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:37+00:00"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 0,
+      "image_id": 0,
+      "category_id": 5,
+      "bbox": [
+        0,
+        217,
+        107,
+        338.278
+      ],
+      "area": 36195.722,
+      "segmentation": [
+        [
+          48.5,
+          552,
+          93.5,
+          554,
+          104,
+          531.5,
+          101,
+          458.5,
+          107,
+          402.5,
+          102,
+          317.5,
+          73.333,
+          314.444,
+          105,
+          217.222,
+          25.5,
+          313,
+          10,
+          296.5,
+          6,
+          286.5,
+          8,
+          281.5,
+          0.5,
+          273,
+          0,
+          494.5,
+          7,
+          502.5,
+          21,
+          538.5,
+          43,
+          555.5,
+          45.5,
+          549,
+          48.5,
+          552
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 3,
+      "bbox": [
+        117,
+        112,
+        523.42,
+        371.064
+      ],
+      "area": 194222.257,
+      "segmentation": [
+        [
+          640,
+          241.702,
+          632.862,
+          231.489,
+          578.141,
+          214.468,
+          463.941,
+          129.362,
+          304.535,
+          112.34,
+          254.572,
+          125.957,
+          161.784,
+          180.426,
+          123.717,
+          228.085,
+          116.58,
+          340.426,
+          152.268,
+          445.957,
+          482.974,
+          449.362,
+          513.903,
+          483.404,
+          561.487,
+          483.404,
+          590.037,
+          418.723,
+          601.933,
+          418.723,
+          606.691,
+          449.362,
+          616.208,
+          449.362,
+          640,
+          415.319,
+          640,
+          241.702
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 2,
+      "image_id": 2,
+      "category_id": 5,
+      "bbox": [
+        323,
+        233,
+        16.875,
+        136.667
+      ],
+      "area": 2306.25,
+      "segmentation": [
+        [
+          335,
+          265.556,
+          326.25,
+          234.444,
+          323.125,
+          233.333,
+          335,
+          296.667,
+          337.5,
+          323.333,
+          336.25,
+          356.667,
+          337.5,
+          367.778,
+          340,
+          370,
+          340,
+          294.444,
+          335,
+          265.556
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 3,
+      "image_id": 3,
+      "category_id": 2,
+      "bbox": [
+        176,
+        200,
+        103.75,
+        21.667
+      ],
+      "area": 2247.917,
+      "segmentation": [
+        [
+          276.25,
+          214.167,
+          275,
+          209.167,
+          280,
+          205.833,
+          278.125,
+          203.333,
+          269.375,
+          201.667,
+          185.625,
+          200,
+          180.625,
+          201.667,
+          177.5,
+          205.833,
+          178.75,
+          209.167,
+          176.25,
+          214.167,
+          176.875,
+          218.333,
+          186.875,
+          221.667,
+          258.75,
+          220.833,
+          274.375,
+          218.333,
+          276.25,
+          214.167
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 4,
+      "image_id": 3,
+      "category_id": 5,
+      "bbox": [
+        160,
+        327,
+        388.75,
+        35.833
+      ],
+      "area": 13930.208,
+      "segmentation": [
+        [
+          203.125,
+          348.333,
+          478.125,
+          341.667,
+          514.375,
+          336.667,
+          536.875,
+          336.667,
+          546.875,
+          335,
+          548.75,
+          330.833,
+          451.875,
+          326.667,
+          326.875,
+          326.667,
+          293.125,
+          328.333,
+          275.625,
+          333.333,
+          236.875,
+          333.333,
+          205.625,
+          338.333,
+          178.125,
+          338.333,
+          161.875,
+          341.667,
+          160,
+          344.167,
+          161.875,
+          348.333,
+          195.625,
+          348.333,
+          198.75,
+          352.5,
+          197.5,
+          360.833,
+          200,
+          362.5,
+          200,
+          350.833,
+          203.125,
+          348.333
+        ]
+      ],
+      "iscrowd": 0
+    }
+  ]
+}

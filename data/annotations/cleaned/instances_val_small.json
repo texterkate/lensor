@@ -1,0 +1,243 @@
+{
+  "info": {
+    "year": "2023",
+    "version": "4",
+    "description": "Exported from roboflow.com",
+    "contributor": "",
+    "url": "https://public.roboflow.com/object-detection/undefined",
+    "date_created": "2023-11-03T15:39:36+00:00"
+  },
+  "licenses": [
+    {
+      "id": 1,
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "CC BY 4.0"
+    }
+  ],
+  "categories": [
+    {
+      "id": 0,
+      "name": "severity-damage",
+      "supercategory": "none"
+    },
+    {
+      "id": 1,
+      "name": "minor-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 2,
+      "name": "minor-scratch",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 3,
+      "name": "moderate-broken",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 4,
+      "name": "moderate-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 5,
+      "name": "moderate-scratch",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 6,
+      "name": "severe-broken",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 7,
+      "name": "severe-dent",
+      "supercategory": "severity-damage"
+    },
+    {
+      "id": 8,
+      "name": "severe-scratch",
+      "supercategory": "severity-damage"
+    }
+  ],
+  "images": [
+    {
+      "id": 0,
+      "license": 1,
+      "file_name": "KmlyfxyrQyi2kIyr6R5ONw_jpeg.rf.a7708c986386d22474f742ea37beb743.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:36+00:00"
+    },
+    {
+      "id": 1,
+      "license": 1,
+      "file_name": "9050469-hyundai-hyundai_aura_sx_plus_10-2020-minor_scratch-dents_jpeg.rf.9ba33275f400ee8c32c7c45fb3b1cb51.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:36+00:00"
+    },
+    {
+      "id": 2,
+      "license": 1,
+      "file_name": "4twBAiFkS6GDtTffhTbZ-2Bw_jpeg.rf.b5522c42dbb3dac76914755087b39882.jpg",
+      "height": 640,
+      "width": 640,
+      "date_captured": "2023-11-03T15:39:36+00:00"
+    }
+  ],
+  "annotations": [
+    {
+      "id": 0,
+      "image_id": 0,
+      "category_id": 1,
+      "bbox": [
+        379,
+        469,
+        12.5,
+        7.778
+      ],
+      "area": 97.222,
+      "segmentation": [
+        [
+          388.125,
+          468.889,
+          380.625,
+          468.889,
+          378.75,
+          472.222,
+          379.375,
+          475.556,
+          390,
+          476.667,
+          391.25,
+          472.222,
+          388.125,
+          468.889
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 1,
+      "image_id": 0,
+      "category_id": 2,
+      "bbox": [
+        276,
+        471,
+        47.5,
+        7.778
+      ],
+      "area": 369.444,
+      "segmentation": [
+        [
+          323.75,
+          474.444,
+          321.875,
+          471.111,
+          279.375,
+          471.111,
+          276.25,
+          474.444,
+          276.875,
+          477.778,
+          290,
+          478.889,
+          320.625,
+          477.778,
+          323.75,
+          474.444
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 2,
+      "image_id": 1,
+      "category_id": 2,
+      "bbox": [
+        420,
+        300,
+        16.25,
+        12.222
+      ],
+      "area": 198.611,
+      "segmentation": [
+        [
+          436.25,
+          303.333,
+          434.375,
+          300,
+          426.875,
+          300,
+          420,
+          305.556,
+          421.875,
+          311.111,
+          431.25,
+          312.222,
+          430,
+          310,
+          436.25,
+          303.333
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 3,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [
+        248,
+        457,
+        8.75,
+        5.552
+      ],
+      "area": 48.58,
+      "segmentation": [
+        [
+          247.5,
+          463.039,
+          256.25,
+          463.039,
+          251.875,
+          457.487,
+          247.5,
+          463.039
+        ]
+      ],
+      "iscrowd": 0
+    },
+    {
+      "id": 4,
+      "image_id": 2,
+      "category_id": 2,
+      "bbox": [
+        198,
+        473,
+        6.25,
+        12.214
+      ],
+      "area": 76.34,
+      "segmentation": [
+        [
+          201.875,
+          473.033,
+          197.5,
+          476.364,
+          197.5,
+          485.247,
+          201.25,
+          485.247,
+          203.75,
+          480.806,
+          201.875,
+          473.033
+        ]
+      ],
+      "iscrowd": 0
+    }
+  ]
+}
