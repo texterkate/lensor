@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 
 # directory to images
 train_img_dir = "data/images/train"
@@ -15,10 +15,10 @@ else:
     test_coco = "data/annotations/instances_test.json"
 
 # Batch size
-train_batch_size = 2
+train_batch_size = 16
 
 # Params for dataloader
-train_shuffle_dl = False
+train_shuffle_dl = True
 num_workers_dl = 4
 
 # Params for training
@@ -27,4 +27,4 @@ num_epochs = 2
 
 lr = 0.005
 momentum = 0.9
-weight_decay = 0.005
+weight_decay = 0.0005
