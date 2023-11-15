@@ -72,10 +72,15 @@ if __name__ == '__main__':
     for epoch in range(config.num_epochs):
         # train for one epoch, printing every 10 iterations
         train_one_epoch(model, optimizer, train_dataloader, device, epoch, print_freq=10)
+        # save model
+        os.makedirs("saved_models", exist_ok=True)
+        torch.save(model.state_dict(), f"saved_models/model_epoch_{epoch}.pth")
         # update the learning rate
         lr_scheduler.step()
         # evaluate on the test dataset
         evaluate(model, val_dataloader, device=device)
+
+
 
 
     #########################################
