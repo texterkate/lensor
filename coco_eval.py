@@ -39,16 +39,16 @@ class CocoEvaluator:
             coco_eval.params.imgIds = list(img_ids)
 
             ####
-            print("per class evaluation")
-            for i in range(1, 9):
-                print(f"class id: {i}")
-                cocoEval_per_class = COCOeval(self.coco_gt, coco_dt, iou_type)
-                cocoEval_per_class.params.catIds = [i]  # person id : 1
-                cocoEval_per_class.params.imgIds = coco_eval.params.imgIds
-                cocoEval_per_class.evaluate()
-                cocoEval_per_class.accumulate()
-                cocoEval_per_class.summarize()
-                print("end of class evaluation")
+            # print("per class evaluation")
+            # for i in range(1, 9):
+            #     print(f"class id: {i}")
+            #     cocoEval_per_class = COCOeval(self.coco_gt, coco_dt, iou_type)
+            #     cocoEval_per_class.params.catIds = [i]  # person id : 1
+            #     cocoEval_per_class.params.imgIds = coco_eval.params.imgIds
+            #     cocoEval_per_class.evaluate()
+            #     cocoEval_per_class.accumulate()
+            #     cocoEval_per_class.summarize()
+            #     print("end of class evaluation")
 
             ####
 

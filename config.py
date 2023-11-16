@@ -1,4 +1,4 @@
-DEBUG = False
+DEBUG = True
 
 # directory to images
 train_img_dir = "data/images/train"
@@ -19,11 +19,15 @@ train_batch_size = 16
 
 # Params for dataloader
 train_shuffle_dl = True
-num_workers_dl = 4
+num_workers_dl = 2 # best amount for Colab
 
 # Params for training
 num_classes = 9
-num_epochs = 15
+
+if DEBUG:
+    num_epochs = 2
+else:
+    num_epochs = 15
 
 lr = 0.005
 momentum = 0.9

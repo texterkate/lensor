@@ -11,6 +11,10 @@ import torchvision
 from matplotlib import patches
 import torchvision.transforms as T
 from collections import Counter
+import random
+from utils import MetricLogger
+from tensorboardX import SummaryWriter
+from coco_eval import CocoEvaluator
 
 id2label = {
     0: 'severity-damage',
@@ -23,6 +27,21 @@ id2label = {
     7: 'severe-dent',
     8: 'severe-scratch'
 }
+
+coco_metrics = [
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
+]
 
 
 def filter_images_with_annotations(coco_json_path):
@@ -54,7 +73,6 @@ def filter_images_with_annotations(coco_json_path):
     category_ids = [annotation["category_id"] for annotation in coco_data["annotations"]]
     print("Count label categories:", Counter(category_ids))
 
-
     # Write the new JSON data to a new file
     with open(output_json_path, 'w') as output_file:
         json.dump(coco_data, output_file, indent=2)
@@ -84,7 +102,7 @@ def download_helper_functions():
     print("Files with helper functions downloaded and saved in the root directory.")
 
 
-class myOwnDataset(torch.utils.data.Dataset):
+class LensorDataset(torch.utils.data.Dataset):
     def __init__(self, root, annotation, transforms=None):
         self.root = root
         self.transforms = transforms
@@ -223,3 +241,53 @@ def plot_img_bbox_pred(img, target, filepath, iou_thresh=0.5):
 # torch to PIL
 def torch_to_pil(img):
     return T.ToPILImage()(img).convert("RGB")
+
+
+def plot_inference_results(model, device, test_dataset, sample_size=10):
+    """Plot inference results of 10 random images from test dataset."""
+    # take random sample of 10 images
+    random.seed(42)
+    random_ints = random.sample(range(len(test_dataset)), sample_size)
+
+    # make directory for inference results if it does not exist
+    os.makedirs("inference_results", exist_ok=True)
+
+    # plot images with target and predictions and save them
+    for i in random_ints:
+        img, target = test_dataset[i]
+        model.eval()
+        with torch.no_grad():
+            pred = model([img.to(device)])[0]
+            plot_img_bbox_target(
+                torch_to_pil(img),
+                target,
+                f"inference_results/image_{target['image_id']}_target.png"
+            )
+            plot_img_bbox_pred(
+                torch_to_pil(img),
+                pred,
+                f"inference_results/image_{target['image_id']}_pred.png",
+                iou_thresh=0.5
+            )
+
+
+def save_model(model, epoch):
+    os.makedirs("saved_models", exist_ok=True)
+    torch.save(model.state_dict(), f"saved_models/model_epoch_{epoch}.pth")
+
+
+def log_metrics(writer: SummaryWriter, metric_logger: MetricLogger, epoch: int,
+                coco_evaluator: CocoEvaluator) -> None:
+    """Log metrics (train loss and validation mAP) to TensorBoard."""
+
+    is_train = metric_logger is not None
+
+    # log train loss
+    if is_train:
+        for k, v in metric_logger.meters.items():
+            writer.add_scalar(f"train_losses/{k}", v.median, epoch)
+
+    # log val/test mAP
+    for i, metric in enumerate(coco_metrics):
+        metric = (f"validation_scores/{metric}" if is_train else f"test_scores/{metric}")
+        writer.add_scalar(metric, coco_evaluator.coco_eval['bbox'].stats[i], epoch)
