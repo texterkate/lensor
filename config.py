@@ -32,3 +32,7 @@ else:
 lr = 0.005
 momentum = 0.9
 weight_decay = 0.0005
+
+# params for inference
+nr_samples_val = 4
+nr_samples_test = 10

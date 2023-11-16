@@ -2,19 +2,18 @@ import torch
 import torch.utils.data
 from PIL import Image
 from pycocotools.coco import COCO
+from torch.utils import data
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 import os
 import urllib.request
 import json
-import matplotlib.pyplot as plt
 import torchvision
-from matplotlib import patches
-import torchvision.transforms as T
 from collections import Counter
-import random
+import config
 from utils import MetricLogger
 from tensorboardX import SummaryWriter
 from coco_eval import CocoEvaluator
+import torchvision.transforms as T
 
 id2label = {
     0: 'severity-damage',
@@ -27,21 +26,6 @@ id2label = {
     7: 'severe-dent',
     8: 'severe-scratch'
 }
-
-coco_metrics = [
-    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
-    "Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ]",
-    "Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ]",
-    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
-    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
-    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
-    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
-]
 
 
 def filter_images_with_annotations(coco_json_path):
@@ -110,47 +94,28 @@ class LensorDataset(torch.utils.data.Dataset):
         self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
-        # Own coco file
-        coco = self.coco
         # Image ID
         img_id = self.ids[index]
-        # List: get annotation id from coco
-        ann_ids = coco.getAnnIds(imgIds=img_id)
-        # Dictionary: target coco_annotation file for an image
-        coco_annotation = coco.loadAnns(ann_ids)
-        # path for input image
-        path = coco.loadImgs(img_id)[0]["file_name"]
-        # open the input image
+        # Get annotation id from coco
+        ann_ids = self.coco.getAnnIds(imgIds=img_id)
+        # Target coco_annotation file for an image
+        coco_annotation = self.coco.loadAnns(ann_ids)
+        # Path for input image
+        path = self.coco.loadImgs(img_id)[0]["file_name"]
+        # Open the input image
         img = Image.open(os.path.join(self.root, path))
-        # number of objects in the image
-        num_objs = len(coco_annotation)
-
-        # Bounding boxes for objects
-        # In coco format, bbox = [xmin, ymin, width, height]
-        # In pytorch, the input should be [xmin, ymin, xmax, ymax]
-        boxes = []
-        labels = []
-        is_crowd = []
-        for i in range(num_objs):
-            xmin = coco_annotation[i]["bbox"][0]
-            ymin = coco_annotation[i]["bbox"][1]
-            xmax = xmin + coco_annotation[i]["bbox"][2]
-            ymax = ymin + coco_annotation[i]["bbox"][3]
-            boxes.append([xmin, ymin, xmax, ymax])
-            labels.append(coco_annotation[i]["category_id"])
-            is_crowd.append(coco_annotation[i]["iscrowd"])
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        labels = torch.as_tensor(labels, dtype=torch.int64)
-        iscrowd = torch.as_tensor(is_crowd, dtype=torch.int64)
-
+        # Bounding boxes for objects (transform to [xmin, ymin, xmax, ymax] format)
+        boxes = torch.tensor(
+            [[anno["bbox"][0], anno["bbox"][1], anno["bbox"][0] + anno["bbox"][2], anno["bbox"][1] + anno["bbox"][3]]
+             for anno in coco_annotation], dtype=torch.float32)
+        # Labels (8 classes in total)
+        labels = torch.tensor([anno["category_id"] for anno in coco_annotation], dtype=torch.int64)
+        # Is crowd
+        is_crowd = torch.tensor([anno["iscrowd"] for anno in coco_annotation], dtype=torch.int64)
         # Size of bbox (Rectangular)
-        areas = []
-        for i in range(num_objs):
-            areas.append(coco_annotation[i]["area"])
-        areas = torch.as_tensor(areas, dtype=torch.float32)
-
+        areas = torch.tensor([anno["area"] for anno in coco_annotation], dtype=torch.float32)
         # Annotation is in dictionary format
-        my_annotation = {"boxes": boxes, "labels": labels, "image_id": img_id, "area": areas, "iscrowd": iscrowd}
+        my_annotation = {"boxes": boxes, "labels": labels, "image_id": img_id, "area": areas, "iscrowd": is_crowd}
 
         if self.transforms is not None:
             img = self.transforms(img)
@@ -161,20 +126,29 @@ class LensorDataset(torch.utils.data.Dataset):
         return len(self.ids)
 
 
-# In my case, just added ToTensor
-def get_transform():
-    custom_transforms = []
-    custom_transforms.append(torchvision.transforms.ToTensor())
-    return torchvision.transforms.Compose(custom_transforms)
+# def get_transform():
+#     custom_transforms = []
+#     custom_transforms.append(torchvision.transforms.ToTensor())
+#     return torchvision.transforms.Compose(custom_transforms)
 
 
-# collate_fn needs for batch
+def get_transform(train):
+    """Get a list of transformations for the train/test datasets."""
+    transforms = []
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
+    transforms.append(T.ToTensor())
+    return T.Compose(transforms)
+
+
 def collate_fn(batch):
     return tuple(zip(*batch))
 
 
 def get_model_object_detection(num_classes):
-    # load an instance segmentation model pre-trained on COCO
+    """Get a pre-trained object detection model from torchvision."""
+
+    # load an object detection model (pre-trained)
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -184,96 +158,30 @@ def get_model_object_detection(num_classes):
     return model
 
 
-def plot_img_bbox_target(img, target, filepath):
-    # plot the image and bboxes
-    # Bounding boxes are defined as follows: x-min y-min width height
-    fig, a = plt.subplots(1, 1)
-    fig.set_size_inches(5, 5)
-    a.imshow(img)
-    for box, label in zip(target['boxes'], target['labels']):
-        x, y, width, height = box[0], box[1], box[2] - box[0], box[3] - box[1]
-        rect = patches.Rectangle((x, y),
-                                 width, height,
-                                 linewidth=2,
-                                 edgecolor='r',
-                                 facecolor='none')
-        # Draw the bounding box on top of the image
-        a.add_patch(rect)
+def save_model(model, epoch, is_best=False):
+    """Save model checkpoint to disk."""
 
-        # Display label near the bounding box
-        label_str = f"{id2label[label.item()]}"
-        a.text(x, y, label_str, fontsize=8, color='r', verticalalignment='top')
-
-    plt.show()
-
-    # save image
-    fig.savefig(filepath)
-
-
-def plot_img_bbox_pred(img, target, filepath, iou_thresh=0.5):
-    # plot the image and bboxes
-    # Bounding boxes are defined as follows: x-min y-min width height
-    fig, a = plt.subplots(1, 1)
-    fig.set_size_inches(5, 5)
-    a.imshow(img)
-
-    for box, label, score in zip(target['boxes'], target['labels'], target['scores']):
-        if score >= iou_thresh:
-            x, y, width, height = box[0], box[1], box[2] - box[0], box[3] - box[1]
-            rect = patches.Rectangle((x, y),
-                                     width, height,
-                                     linewidth=2,
-                                     edgecolor='r',
-                                     facecolor='none')
-            # Draw the bounding box on top of the image
-            a.add_patch(rect)
-
-            # Display label and score near the bounding box
-            label_str = f"{id2label[label.item()]}: {score:.3f}"
-            a.text(x, y, label_str, fontsize=8, color='r', verticalalignment='top')
-
-    plt.show()
-
-    # save image
-    fig.savefig(filepath)
-
-
-# torch to PIL
-def torch_to_pil(img):
-    return T.ToPILImage()(img).convert("RGB")
-
-
-def plot_inference_results(model, device, test_dataset, sample_size=10):
-    """Plot inference results of 10 random images from test dataset."""
-    # take random sample of 10 images
-    random.seed(42)
-    random_ints = random.sample(range(len(test_dataset)), sample_size)
-
-    # make directory for inference results if it does not exist
-    os.makedirs("inference_results", exist_ok=True)
-
-    # plot images with target and predictions and save them
-    for i in random_ints:
-        img, target = test_dataset[i]
-        model.eval()
-        with torch.no_grad():
-            pred = model([img.to(device)])[0]
-            plot_img_bbox_target(
-                torch_to_pil(img),
-                target,
-                f"inference_results/image_{target['image_id']}_target.png"
-            )
-            plot_img_bbox_pred(
-                torch_to_pil(img),
-                pred,
-                f"inference_results/image_{target['image_id']}_pred.png",
-                iou_thresh=0.5
-            )
-
-
-def save_model(model, epoch):
     os.makedirs("saved_models", exist_ok=True)
     torch.save(model.state_dict(), f"saved_models/model_epoch_{epoch}.pth")
+
+    if is_best:
+        torch.save(model.state_dict(), f"best_model/best_model.pth")
+
+
+coco_metrics = [
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
+    "Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ]",
+    "Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ]",
+]
 
 
 def log_metrics(writer: SummaryWriter, metric_logger: MetricLogger, epoch: int,
@@ -291,3 +199,45 @@ def log_metrics(writer: SummaryWriter, metric_logger: MetricLogger, epoch: int,
     for i, metric in enumerate(coco_metrics):
         metric = (f"validation_scores/{metric}" if is_train else f"test_scores/{metric}")
         writer.add_scalar(metric, coco_evaluator.coco_eval['bbox'].stats[i], epoch)
+
+
+def log_inference_results(writer: SummaryWriter, model, device, dataset, sample_size, stage="validation",
+                          epoch="") -> None:
+    """Log inference results (both prediction and target images) to TensorBoard."""
+
+    # Take sample images from dataset
+    sampler = data.RandomSampler(dataset, num_samples=sample_size, generator=torch.Generator().manual_seed(42))
+    dataloader = data.DataLoader(dataset, batch_size=config.train_batch_size, shuffle=False,
+                                 num_workers=config.num_workers_dl,
+                                 collate_fn=collate_fn, sampler=sampler)
+
+    # Log inference results (target and prediction) for each image to TensorBoard
+    with torch.no_grad():
+        for images, targets in dataloader:
+            images = [image.to(device) for image in images]
+            targets = [{k: v.to(device) if torch.is_tensor(v) else v for k, v in t.items()} for t in targets]
+
+            outputs = model(images)
+            outputs = [{k: v.to("cpu") for k, v in t.items()} for t in outputs]
+
+            for image, output, target in zip(images, outputs, targets):
+                img_id = target['image_id']
+                labels = target["labels"].numpy()
+                predictions = output["labels"].numpy()
+                boxes_target = target['boxes']
+                boxes_prediction = output["boxes"].numpy()
+                scores = output["scores"].numpy()
+
+                # Filter predictions with scores >= 0.5
+                high_score_indices = scores >= 0.5
+                predictions = predictions[high_score_indices]
+                scores = scores[high_score_indices]
+
+                # Convert label indices to label names
+                targets = [id2label[label] for label in labels]
+                predictions = [f"{id2label[prediction]}: {score:.3f}" for prediction, score in zip(predictions, scores)]
+
+                writer.add_image_with_boxes(f'{stage}_inference/Example_{img_id}_target_{epoch}', image,
+                                            box_tensor=boxes_target, labels=targets)
+                writer.add_image_with_boxes(f'{stage}_inference/Example_{img_id}_prediction_{epoch}', image,
+                                            box_tensor=boxes_prediction[high_score_indices], labels=predictions)

@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import torch
 from engine import train_one_epoch, evaluate
@@ -8,29 +9,36 @@ from model_utils import (
     collate_fn,
     get_transform,
     LensorDataset,
-    download_helper_functions,
     filter_images_with_annotations,
-    plot_inference_results,
     save_model,
     log_metrics,
-id2label
+    log_inference_results,
 )
 
-if __name__ == '__main__':
-    print("Torch version:", torch.__version__)
-    writer = SummaryWriter()
-    TRAIN = False
 
-    # download_helper_functions()
+def main(train):
+
+    print("Start execution of main.py")
+
+    # create tensorboard writer
+    writer = SummaryWriter()
 
     # create train, validation and test datasets
-    train_dataset = LensorDataset(root=config.train_img_dir,
-                                  annotation=filter_images_with_annotations(config.train_coco),
-                                  transforms=get_transform())
-    val_dataset = LensorDataset(root=config.val_img_dir, annotation=filter_images_with_annotations(config.val_coco),
-                                transforms=get_transform())
-    test_dataset = LensorDataset(root=config.test_img_dir, annotation=filter_images_with_annotations(config.test_coco),
-                                 transforms=get_transform())
+    train_dataset = LensorDataset(
+        root=config.train_img_dir,
+        annotation=filter_images_with_annotations(config.train_coco),
+        transforms=get_transform(train=True)
+    )
+    val_dataset = LensorDataset(
+        root=config.val_img_dir,
+        annotation=filter_images_with_annotations(config.val_coco),
+        transforms=get_transform(train=False)
+    )
+    test_dataset = LensorDataset(
+        root=config.test_img_dir,
+        annotation=filter_images_with_annotations(config.test_coco),
+        transforms=get_transform(train=False)
+    )
 
     # define training, validation and test data loaders
     train_dataloader = torch.utils.data.DataLoader(
@@ -59,7 +67,7 @@ if __name__ == '__main__':
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print("Device:", device)
 
-    if TRAIN:
+    if train:
 
         # get the model
         model = get_model_object_detection(config.num_classes)
@@ -80,64 +88,63 @@ if __name__ == '__main__':
             gamma=0.1
         )
 
+        # keep track of best mAP
+        max_map = -np.Inf
+
         # train the model for nr of epochs specified in config
         print(f"Start training for {config.num_epochs} epochs...")
         for epoch in range(config.num_epochs):
+
             # train for one epoch, printing every 10 iterations
             metric_logger = train_one_epoch(model, optimizer, train_dataloader, device, epoch, print_freq=10)
-            # save model
-            save_model(model, epoch)
+
             # update the learning rate
             lr_scheduler.step()
-            # evaluate on the test dataset
+
+            # evaluate on the validation dataset
             coco_evaluator = evaluate(model, val_dataloader, device=device)
+
+            # current mAP (iou = 0.5)
+            map = coco_evaluator.coco_eval['bbox'].stats[1]
+
+            # save model
+            save_model(model, epoch, is_best=map>max_map)
+            max_map = max(map, max_map)
+
             # add metrics to tensorboard
             log_metrics(writer, metric_logger, epoch, coco_evaluator)
 
-    # load best model model
+            # log inference results
+            log_inference_results(writer, model, device, val_dataset, sample_size=config.nr_samples_val, stage="validation", epoch=epoch)
+
+    # load best model
     model = get_model_object_detection(config.num_classes)
     if device == torch.device("cpu"):
-        model.load_state_dict(torch.load("best_model/model_epoch_8.pth", map_location=torch.device('cpu')))
+        model.load_state_dict(torch.load("best_model/best_model.pth", map_location=torch.device('cpu')))
     else:
-        model.load_state_dict(torch.load("best_model/model_epoch_8.pth"))
+        model.load_state_dict(torch.load("best_model/best_model.pth"))
 
     # move model to the right device
     model.to(device)
 
+    # set model to evaluation mode
     model.eval()
-    results = []
 
-    with torch.no_grad():
-        for images, targets in test_dataloader:
-            images = list(image.to(device) for image in images)
-            targets = [{k: v.to(device) if torch.is_tensor(v) else v for k, v in t.items()} for t in targets]
+    # evaluate on the test dataset
+    test_evaluator = evaluate(model, test_dataloader, device=device)
 
-            outputs = model(images)
-            outputs = [{k: v.to("cpu") for k, v in t.items()} for t in outputs]
+    # add test metrics to tensorboard
+    log_metrics(writer, None, 0, test_evaluator)
 
-            for image, output, target in zip(images, outputs, targets):
-                result = {"image": image, "img_id": target['image_id'], "label": target["labels"].numpy(),
-                          "prediction": output["labels"].numpy(), "boxes_prediction": output["boxes"].numpy(),
-                          "boxes_target": target['boxes'], "scores": output["scores"].numpy()}
-                results.append(result)
+    # log inference results on test set
+    log_inference_results(writer, model, device, test_dataset, sample_size=config.nr_samples_test, stage="test")
 
-        for result in results:
-            image = result["image"]
-            img_id = result["img_id"]
-            predictions = [f"{id2label[prediction]}: {score:.3f}" for prediction, score in zip(result["prediction"], result["scores"]) if score >= 0.5]
-            targets = [id2label[label] for label in result["label"]]
-            boxes_target = result["boxes_target"]
-            boxes_prediction = np.array([box for box, score in zip(result["boxes_prediction"], result['scores']) if score >= 0.5])
-            writer.add_image_with_boxes(f'Inference/Example_{img_id}_target', image, box_tensor=boxes_target, labels=targets)
-            writer.add_image_with_boxes(f'Inference/Example_{img_id}_prediction', image, box_tensor=boxes_prediction, labels=predictions)
-
-    # # evaluate on the test dataset
-    # test_evaluator = evaluate(model, test_dataloader, device=device)
-    #
-    # # add metrics to tensorboard
-    # log_metrics(writer, None, 0, test_evaluator)
-    #
-    # # inference
-    # plot_inference_results(model, device, test_dataset, sample_size=1)
-
+    # close tensorboard writer
     writer.close()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Object Detection Training, Validation and Testing Script')
+    parser.add_argument('--train', action='store_true', help='Flag to indicate whether to train the model')
+    args = parser.parse_args()
+    main(train=args.train)
