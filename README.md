@@ -42,5 +42,11 @@ In the Tensorboard dashboard, you can find the following folders:
 - **test_scores**: contains the test scores
 - **test_inference**: contains the inference on sample images from test set
 
+**Important note**: 
+In the _runs_ section you'll find two runs. One run is for the model trained
+on GPU (with Colab). This model I trained separately in Colab to make use of GPU. This resulted however in the metrics not being nicely stored in Tensorboard. 
+The other run is for the model trained on CPU. This model I trained on my local machine. I added this run because it these metrics are being nicely stored in Tensorboard. Please note that these results make no sense at all (as it was trained on 4 images for 2 epochs, just to showcase Tensorboars is working).
+
+
 
 
