@@ -29,6 +29,8 @@ id2label = {
 
 
 def filter_images_with_annotations(coco_json_path):
+    """Filter images in a COCO JSON file to keep only images with at least one annotation."""
+
     # Get filename incl extension
     filename = os.path.basename(coco_json_path)
     print("Reading file:", filename)
@@ -50,10 +52,10 @@ def filter_images_with_annotations(coco_json_path):
     output_dir = os.path.join(os.path.dirname(coco_json_path), 'cleaned')
     os.makedirs(output_dir, exist_ok=True)
 
-    # Create output path which is stored in directory 'filtered'
+    # Create output path of new COCO JSON file
     output_json_path = os.path.join(output_dir, filename)
 
-    # print count values of categories
+    # print count values of categories (to investigate class imbalance)
     category_ids = [annotation["category_id"] for annotation in coco_data["annotations"]]
     print("Count label categories:", Counter(category_ids))
 
@@ -65,8 +67,7 @@ def filter_images_with_annotations(coco_json_path):
 
 
 def download_helper_functions():
-    """ Download the helper functions from references files from the PyTorch repository.
-    """
+    """ Download the helper functions from references files from the PyTorch repository."""
 
     # URLs of the files to download
     urls = [
@@ -124,12 +125,6 @@ class LensorDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.ids)
-
-
-# def get_transform():
-#     custom_transforms = []
-#     custom_transforms.append(torchvision.transforms.ToTensor())
-#     return torchvision.transforms.Compose(custom_transforms)
 
 
 def get_transform(train):
@@ -214,17 +209,23 @@ def log_inference_results(writer: SummaryWriter, model, device, dataset, sample_
     # Log inference results (target and prediction) for each image to TensorBoard
     with torch.no_grad():
         for images, targets in dataloader:
-            images = [image.to(device) for image in images]
-            targets = [{k: v.to(device) if torch.is_tensor(v) else v for k, v in t.items()} for t in targets]
 
+            # Move images and targets to device
+            images = [image.to(device) for image in images]
+            targets = [{k: v.to("cpu") if torch.is_tensor(v) else v for k, v in t.items()} for t in targets]
+
+            # Get model predictions
             outputs = model(images)
             outputs = [{k: v.to("cpu") for k, v in t.items()} for t in outputs]
 
+            # Log inference results for each image
             for image, output, target in zip(images, outputs, targets):
+
+                # Get image ID, labels, predictions, boxes, and scores
                 img_id = target['image_id']
                 labels = target["labels"].numpy()
                 predictions = output["labels"].numpy()
-                boxes_target = target['boxes']
+                boxes_target = target['boxes'].numpy()
                 boxes_prediction = output["boxes"].numpy()
                 scores = output["scores"].numpy()
 
@@ -237,6 +238,7 @@ def log_inference_results(writer: SummaryWriter, model, device, dataset, sample_
                 targets = [id2label[label] for label in labels]
                 predictions = [f"{id2label[prediction]}: {score:.3f}" for prediction, score in zip(predictions, scores)]
 
+                # Add images with boxes to TensorBoard
                 writer.add_image_with_boxes(f'{stage}_inference/Example_{img_id}_target_{epoch}', image,
                                             box_tensor=boxes_target, labels=targets)
                 writer.add_image_with_boxes(f'{stage}_inference/Example_{img_id}_prediction_{epoch}', image,

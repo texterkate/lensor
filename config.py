@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 
 # directory to images
 train_img_dir = "data/images/train"
